@@ -309,6 +309,17 @@
         </div>
 
         <div class="card">
+  <h3><i class="fas fa-weight-hanging"></i> Manual Weight Entry</h3>
+
+  <label for="manualWeight">Weight (grams)</label>
+  <input type="number" id="manualWeight" step="0.1" placeholder="Enter rodent weight">
+
+  <button class="action-btn" onclick="manualCalculation()">
+    <i class="fas fa-calculator"></i> Calculate Without Arduino
+  </button>
+</div>
+
+        <div class="card">
   <h3><i class="fas fa-robot"></i> Automatic Mode</h3>
 
   <label for="autoInterval">Select Interval (seconds)</label>
@@ -319,6 +330,10 @@
     <option value="10">10 seconds</option>
     <option value="30">30 seconds</option>
     <option value="3600">1 hour</option>
+    <option value="10800">3 hours</option>
+    <option value="21600">6 hours</option>
+    <option value="43200">12 hours</option>
+    <option value="86400">24 hours</option>
   </select>
 
   <button class="action-btn" onclick="startAutoMode()">
@@ -373,6 +388,59 @@
 
 
 <script>
+
+  /* -------- MANUAL CALCULATION MODE -------- */
+function manualCalculation(){
+
+  let weight = parseFloat(document.getElementById("manualWeight").value);
+  let length = parseFloat(document.getElementById("length").value);
+
+  if(!weight || !length){
+    alert("Please enter both weight and length.");
+    return;
+  }
+
+  // Lee Index formula
+  let lee = (Math.cbrt(weight) / length) * 1000;
+
+  let condition = "Normal";
+
+  if(lee < 300){
+    condition = "Underweight";
+  }
+  else if(lee >= 300 && lee < 310){
+    condition = "Normal";
+  }
+  else if(lee >= 310 && lee < 320){
+    condition = "Overweight";
+  }
+  else{
+    condition = "Obese";
+  }
+
+  // Update dashboard display
+  document.getElementById("w").innerText = weight.toFixed(2);
+  document.getElementById("l").innerText = length.toFixed(2);
+  document.getElementById("lee").innerText = lee.toFixed(3);
+
+  const conditionElement = document.getElementById("cond");
+  conditionElement.innerText = condition;
+
+  conditionElement.className = "";
+  conditionElement.classList.add(`condition-${condition.toLowerCase()}`);
+
+  // Update image
+  const imageElement = document.getElementById("conditionImage");
+  const labelElement = document.getElementById("image-label");
+
+  if (conditionImages[condition]) {
+    imageElement.src = conditionImages[condition];
+    labelElement.innerText = "Current Condition: " + condition;
+  }
+
+  // Upload to Firebase
+  uploadToFirebase(weight, length, lee, condition);
+}
 /* ---------------- IMAGE URL CONFIGURATION ---------------- */
 // !!! REMEMBER TO REPLACE THESE PLACEHOLDER URLS WITH YOUR ACTUAL IMAGE LINKS !!!
 const conditionImages = {
@@ -431,6 +499,31 @@ async function readSerial() {
     buffer = lines.pop();
     lines.forEach(processLine);
   }
+}
+
+function updateDashboard(weight, length, lee, condition){
+  
+
+  const conditionElement = document.getElementById("cond");
+
+  document.getElementById("w").innerText = weight.toFixed(2);
+  document.getElementById("l").innerText = length.toFixed(2);
+  document.getElementById("lee").innerText = lee.toFixed(3);
+
+  conditionElement.innerText = condition;
+
+  conditionElement.className = "";
+  conditionElement.classList.add(`condition-${condition.toLowerCase()}`);
+
+  // Update Image
+  const imageElement = document.getElementById("conditionImage");
+  const labelElement = document.getElementById("image-label");
+
+  if (conditionImages[condition]) {
+    imageElement.src = conditionImages[condition];
+    labelElement.innerText = `Current Condition: ${condition}`;
+  }
+
 }
 
 function processLine(line) {
@@ -551,6 +644,4 @@ function uploadToFirebase(weight, length, lee, condition) {
 </script>
 
 </body>
-
 </html>
-
